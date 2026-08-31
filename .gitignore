@@ -1,0 +1,100 @@
+# ===== 敏感信息 =====
+.env
+.env.local
+.env.production
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ===== 虚拟环境 =====
+venv/
+.venv/
+ENV/
+env/
+.conda/
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ===== 模型文件（太大）=====
+models/
+*.bin
+*.pt
+*.pth
+*.onnx
+*.h5
+*.safetensors
+
+# ===== 数据文件（太大）=====
+data/raw/
+data/processed/
+data/indexes/
+*.xlsx
+*.csv
+*.json
+!package.json
+
+# ===== 日志和临时文件 =====
+*.log
+logs/
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# ===== 测试和覆盖率 =====
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ===== Jupyter Notebook =====
+.ipynb_checkpoints/
+*.ipynb
+
+# ===== 文档构建 =====
+docs/_build/
+docs/.doctrees/
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== 其他 =====
+*.pid
+*.seed
+*.pid.lock
+
+# 评估 runner 每次运行生成的报告（已嵌入讲义 §5.6，不入库）
+evals/last_report.md
