@@ -1,0 +1,68 @@
+# ============================================================
+# 智慧问诊Agent系统 - Docker Compose 编排文件
+# ============================================================
+# 用法：
+#   启动：  docker-compose up -d
+#   停止：  docker-compose stop
+#   查看：  docker-compose ps
+#   日志：  docker-compose logs -f neo4j
+#   销毁：  docker-compose down        （删除容器，保留数据卷）
+#   清空：  docker-compose down -v     （删除容器 + 数据卷，慎用！）
+#
+# 说明：
+#   - 本项目采用单进程部署：FastAPI 同时托管 API 与 Vue 前端静态文件。
+#   - 容器化基础设施三件套：Neo4j 图数据库 + Redis（会话热缓存）+ MySQL 8.0（对话历史冷存储）。
+#   - Neo4j Web UI:  http://localhost:7474  (neo4j / 12345678)
+#   - Neo4j Bolt:    bolt://localhost:7687
+#   - Redis:         localhost:6379（热缓存，重启可丢，全量在 MySQL）
+#   - MySQL:         localhost:3306（smc_history 库，root / 123456）
+# ============================================================
+
+services:
+  neo4j:
+    image: neo4j:5.26
+    container_name: neo4j          # 固定容器名，与 .env / 文档保持一致
+    ports:
+      - "7474:7474"                # Neo4j Web UI（HTTP）
+      - "7687:7687"                # Neo4j Bolt 协议（程序连接）
+    environment:
+      - NEO4J_AUTH=neo4j/12345678  # 默认用户名/密码
+    volumes:
+      - neo4j_data:/data           # 数据持久化（容器删除后数据仍保留）
+    restart: unless-stopped        # 异常退出自动重启
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"                # 会话热缓存（LPUSH+LTRIM 12 轮 + TTL 24h）
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    # 避免与本机其他项目（如 SmartVoyage）遗留的同名容器冲突
+    container_name: smc-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456            # 与 .env 的 MYSQL_PASSWORD 保持一致
+      - MYSQL_DATABASE=smc_history            # 首次初始化自动建库
+    command:                                  # 中文存储底线：utf8mb4
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql  # 对话历史持久化
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+    external: false                # 若卷不存在则自动创建，第一次启动时创建
+    name: neo4j_data               # 显式指定卷名（不加项目名前缀），与旧 docker run 一致
+  mysql_data:
+    external: false
+    name: mysql_data
