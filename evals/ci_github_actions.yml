@@ -1,0 +1,34 @@
+# 评估 CI 片段（拷到 .github/workflows/eval.yml 使用）
+# PR 跑 smoke 子集（快、便宜）；合并到 main 跑全量。
+# 门禁由 runner 退出码实现：硬规则不达标 → 非 0 → CI 红。
+name: eval
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev01]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install deps
+        run: pip install -r requirements.txt
+      - name: eval (smoke on PR, full on main)
+        env:
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          MODEL_BASE_URL: ${{ secrets.MODEL_BASE_URL }}
+          MODEL_NAME: ${{ secrets.MODEL_NAME }}
+          # 可选可观测：解开即用，runner 自动接 LangSmith
+          # LANGSMITH_TRACING: "true"
+          # LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python evals/runner.py --subset smoke      # make eval-fast
+          else
+            python evals/runner.py                      # make eval-full
+          fi
